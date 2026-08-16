@@ -1,0 +1,5 @@
+node_modules/
+prisma/seed.ts
+dist/
+.env
+.env.local

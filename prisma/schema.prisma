@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  password           String
+  name               String
+  role               Role      @default(CANDIDATE)
+  isVerified         Boolean   @default(true)
+  verificationToken  String?   @default("")
+  resetPasswordToken String?   @default("")
+  resetPasswordExpires DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  jobs               Job[]     @relation("EmployerJobs")
+  applications       JobApplication[]
+  savedJobs          SavedJob[]
+}
+
+model Job {
+  id                String    @id @default(uuid())
+  title             String
+  description       String    @db.Text
+  requirements      String    @db.Text
+  responsibilities  String    @db.Text
+  location         String
+  type             JobType
+  category         String
+  salary           String
+  experience       String
+  companyName      String
+  companyLogo      String?
+  companyWebsite   String?
+  companySize      String?
+  jobUrl           String?
+  isExternal       Boolean    @default(false)
+  featured         Boolean    @default(false)
+  status           JobStatus @default(ACTIVE)
+  postedDate       DateTime   @default(now())
+  expiryDate       DateTime?
+  employerId       String
+  employer         User       @relation("EmployerJobs", fields: [employerId], references: [id])
+  applications     JobApplication[]
+  savedBy          SavedJob[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([employerId])
+}
+
+model JobApplication {
+  id          String    @id @default(uuid())
+  jobId       String
+  userId      String
+  status      ApplicationStatus @default(PENDING)
+  resume      String
+  coverLetter String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  job         Job       @relation(fields: [jobId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([jobId])
+  @@index([userId])
+}
+
+model SavedJob {
+  id        String    @id @default(uuid())
+  jobId     String
+  userId    String
+  createdAt DateTime  @default(now())
+  job       Job       @relation(fields: [jobId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([jobId])
+  @@index([userId])
+}
+
+enum Role {
+  CANDIDATE
+  EMPLOYER
+  ADMIN
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum JobStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  SHORTLISTED
+  REJECTED
+  ACCEPTED
+} 
