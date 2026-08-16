@@ -36,6 +36,14 @@ router.post('/scrape', async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+router.get('/stats', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await JobsController.getPlatformStats(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     await JobsController.getJobById(req, res);

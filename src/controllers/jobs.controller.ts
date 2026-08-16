@@ -293,4 +293,25 @@ export class JobsController {
       res.status(500).json({ message: 'Error running job scraper' });
     }
   }
+
+  static async getPlatformStats(req: Request, res: Response): Promise<void> {
+    try {
+      const [liveJobs, companies, candidates, totalApplications] = await Promise.all([
+        prisma.job.count({ where: { status: JobStatus.ACTIVE } }),
+        prisma.user.count({ where: { role: 'EMPLOYER' } }),
+        prisma.user.count({ where: { role: 'CANDIDATE' } }),
+        prisma.jobApplication.count()
+      ]);
+
+      res.json({
+        liveJobs: liveJobs || 0,
+        companies: companies || 0,
+        candidates: candidates || 0,
+        totalApplications: totalApplications || 0
+      });
+    } catch (error) {
+      console.error('Get platform stats error:', error);
+      res.status(500).json({ message: 'Error fetching platform stats' });
+    }
+  }
 }

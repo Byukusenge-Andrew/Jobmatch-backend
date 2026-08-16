@@ -4,8 +4,21 @@ import prisma from '../lib/prisma';
 export class EmployersController {
   static async getEmployers(req: Request, res: Response): Promise<void> {
     try {
+      const { query, location } = req.query;
+
+      const whereClause: any = {
+        role: 'EMPLOYER'
+      };
+
+      if (query && typeof query === 'string' && query.trim() !== '') {
+        whereClause.OR = [
+          { name: { contains: query.trim(), mode: 'insensitive' } },
+          { email: { contains: query.trim(), mode: 'insensitive' } }
+        ];
+      }
+
       const employers = await prisma.user.findMany({
-        where: { role: 'EMPLOYER' },
+        where: whereClause,
         select: {
           id: true,
           name: true,
@@ -28,15 +41,18 @@ export class EmployersController {
         id: e.id,
         name: e.name,
         email: e.email,
-        logo: 'https://picsum.photos/200/200',
+        logo: `https://picsum.photos/200/200?random=${e.id}`,
         industry: 'Technology & Software',
-        location: 'San Francisco, CA',
+        location: location ? (location as string) : 'San Francisco, CA',
         openPositions: e.jobs.length,
         description: 'Leading provider of innovative software solutions and digital platforms.',
         jobs: e.jobs
       }));
 
-      res.json(formatted);
+      res.json({
+        employers: formatted,
+        total: formatted.length
+      });
     } catch (error) {
       console.error('Get employers error:', error);
       res.status(500).json({ message: 'Error fetching employers' });
@@ -58,7 +74,7 @@ export class EmployersController {
         }
       });
 
-      if (!employer || employer.role !== 'EMPLOYER') {
+      if (!employer || (employer.role !== 'EMPLOYER' && employer.role !== 'ADMIN')) {
         res.status(404).json({ message: 'Employer not found' });
         return;
       }
@@ -67,7 +83,7 @@ export class EmployersController {
         id: employer.id,
         name: employer.name,
         email: employer.email,
-        logo: 'https://picsum.photos/200/200',
+        logo: `https://picsum.photos/200/200?random=${employer.id}`,
         industry: 'Technology & Software',
         location: 'San Francisco, CA',
         website: 'https://techcorp.example.com',
